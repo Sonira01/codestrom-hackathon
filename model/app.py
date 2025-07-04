@@ -141,13 +141,15 @@ except Exception as e:
 app = Flask(__name__)
 
 # --- CORS Configuration ---
-# Allow configuring origins via environment variable, defaulting to localhost for development
-ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5173,https://codestrom-hackathon.vercel.app')
-if isinstance(ALLOWED_ORIGINS, str):
-    ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS.split(',')]
+# Explicit list of allowed origins for production
+allowed_origins = [
+    "https://codestrom-hackathon.vercel.app",
+    "http://localhost:5173"
+]
 
-CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
-print(f"CORS configured for origins: {ALLOWED_ORIGINS}")
+CORS(app, resources={r"/*": {"origins": allowed_origins}})
+print(f"CORS configured for origins: {allowed_origins}")
+
 
 
 @app.route('/predict', methods=['POST'])

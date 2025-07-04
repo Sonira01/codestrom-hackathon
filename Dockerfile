@@ -12,6 +12,9 @@ COPY requirements.txt .
 
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
+# Create model directory with write permissions in /app
+RUN mkdir -p /app/model
+
 COPY . .
 
 EXPOSE 8000

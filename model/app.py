@@ -16,7 +16,7 @@ CLASS_NAMES = ['glioma', 'meningioma', 'notumor', 'pituitary', 'unlabeled']
 # --- Load Pretrained Model ---
 try:
     print(f"[INFO] Loading model from: {MODEL_PATH}")
-     model = load_model(str(MODEL_PATH), compile=False)
+     model = load_model(str(MODEL_PATH))
     print("[INFO] Model loaded successfully.")
 except Exception as e:
     print(f"[ERROR] Failed to load model: {e}")

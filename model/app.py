@@ -242,3 +242,7 @@ def trigger_retrain_endpoint():
 #     # Ensure TRAIN_DATA_DIR is created if it doesn't exist for local dev
 #     Path(TRAIN_DATA_DIR).mkdir(parents=True, exist_ok=True)
 #     app.run(host='0.0.0.0', port=5000, debug=True)
+
+@app.route('/')
+def health_check():
+    return 'Flask app is running!', 200

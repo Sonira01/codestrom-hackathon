@@ -5,3 +5,4 @@ numpy==1.23.5
 h5py==3.7.0
 Werkzeug==2.3.6
 gunicorn
+Pillow==9.5.0

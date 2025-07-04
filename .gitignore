@@ -1,0 +1,20 @@
+data/*
+!Training/.gitkeep
+# Do NOT ignore notebooks in Testing/glioma
+!Testing/glioma/*.ipynb
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tif
+*.tiff
+*.gif
+
+# Ignore notebook checkpoints
+.ipynb_checkpoints/
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore the frontend
+frontend/

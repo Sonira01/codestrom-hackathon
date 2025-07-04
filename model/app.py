@@ -13,7 +13,8 @@ from pathlib import Path # Ensure Path is imported for use outside main guard
 # --- Configuration ---
 # Use environment variables for paths, with sensible defaults for local development
 BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_MODEL_PATH = BASE_DIR / 'modelFile' / 'brain_tumor_model.keras'
+DEFAULT_MODEL_PATH = Path('/tmp/brain_tumor_model.keras')
+
 DEFAULT_TRAIN_DATA_DIR = BASE_DIR.parent / 'data' / 'brain-data' / 'Training'
 
 MODEL_PATH = os.environ.get('MODEL_PATH', str(DEFAULT_MODEL_PATH))

@@ -1,5 +1,5 @@
 Flask
-tensorflow # or tensorflow-cpu if you don't need GPU
+ tensorflow==2.12.0 
 numpy
 Pillow
 Flask-CORS

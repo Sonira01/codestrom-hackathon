@@ -89,21 +89,49 @@ def predict():
         pred_class = int(np.argmax(preds[0]))
         confidence = float(np.max(preds[0]))
 
-        # Retrain model after saving new image
-        retrain_model()
+        # Retrain model after saving new image - REMOVED direct call
+        # retrain_model()
 
         return jsonify({
             'predicted_class': CLASS_NAMES[pred_class],
             'confidence': confidence,
             'all_confidences': {CLASS_NAMES[i]: float(preds[0][i]) for i in range(len(CLASS_NAMES))},
-            'retrained': True
+            'retrained': False  # Retraining is now decoupled
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Add retrain_model function
+# Retrain model function (now called by a separate endpoint)
 def retrain_model():
+    print("Starting model retraining...")
     train_dir = os.path.join(os.path.dirname(__file__), '../data/brain-data/Training')
+
+    # Check if the training directory exists and is not empty
+    if not os.path.exists(train_dir) or not os.listdir(train_dir):
+        print("Training directory is empty or does not exist. Skipping retraining.")
+        return False
+
+    # Check for subdirectories (classes)
+    # flow_from_directory requires at least one subdirectory
+    sub_dirs = [d for d in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, d))]
+    if not sub_dirs:
+        print(f"No subdirectories found in {train_dir}. Skipping retraining as ImageDataGenerator needs class folders.")
+        return False
+
+    # Check if subdirectories contain images
+    found_images = False
+    for sub_dir in sub_dirs:
+        for ext in ('*.jpg', '*.jpeg', '*.png', '*.bmp'): # Common image extensions
+            if list(Path(os.path.join(train_dir, sub_dir)).glob(ext)):
+                found_images = True
+                break
+        if found_images:
+            break
+
+    if not found_images:
+        print(f"No images found in subdirectories of {train_dir}. Skipping retraining.")
+        return False
+
     datagen = ImageDataGenerator(rescale=1./255, validation_split=0.1)
     train_gen = datagen.flow_from_directory(
         train_dir,
@@ -121,8 +149,29 @@ def retrain_model():
     )
     # Recompile model (if needed)
     model.compile(optimizer=Adam(learning_rate=1e-4), loss='categorical_crossentropy', metrics=['accuracy'])
+
+    print(f"Found {train_gen.samples} training samples and {val_gen.samples} validation samples.")
+    if train_gen.samples == 0:
+        print("No training samples found after applying ImageDataGenerator. Skipping model.fit.")
+        return False
+
     model.fit(train_gen, validation_data=val_gen, epochs=1)  # Use 1 epoch for demo; increase as needed
     model.save(MODEL_PATH)
+    print(f"Model retrained and saved to {MODEL_PATH}")
+    return True
+
+@app.route('/trigger_retrain', methods=['POST'])
+def trigger_retrain_endpoint():
+    try:
+        print("Retrain endpoint called.")
+        if retrain_model():
+            return jsonify({'message': 'Model retraining initiated and completed successfully.'}), 200
+        else:
+            return jsonify({'message': 'Model retraining skipped (e.g., no data or data issue).'}), 200
+    except Exception as e:
+        return jsonify({'error': f'Error during retraining: {str(e)}'}), 500
 
 if __name__ == '__main__':
+    # Ensure Path is imported for the checks in retrain_model
+    from pathlib import Path
     app.run(host='0.0.0.0', port=5000, debug=True)

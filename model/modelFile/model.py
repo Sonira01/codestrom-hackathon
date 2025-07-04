@@ -1,9 +1,13 @@
+# model.py
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.optimizers import Adam
+from pathlib import Path
 
-def build_model(img_size=150, num_classes=4):
+MODEL_FILE_PATH = Path(__file__).resolve().parent / "brain_tumor_model.keras"
+
+def build_model(img_size=150, num_classes=5):  # Changed to 5 to match CLASS_NAMES in app.py
     model = Sequential([
         Conv2D(32, (3, 3), activation='relu', input_shape=(img_size, img_size, 3)),
         MaxPooling2D(2, 2),
@@ -21,4 +25,5 @@ def build_model(img_size=150, num_classes=4):
 
 if __name__ == "__main__":
     model = build_model()
-    model.summary()
+    model.save(MODEL_FILE_PATH)
+    print(f"[INFO] Model saved to {MODEL_FILE_PATH}")

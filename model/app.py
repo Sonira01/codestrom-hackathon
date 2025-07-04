@@ -9,14 +9,16 @@ from pathlib import Path
 
 # --- Config ---
 BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / 'brain_tumor_model.keras'
+MODEL_PATH = BASE_DIR / 'modelFile' / 'brain_tumor_model.keras'
 IMG_SIZE = 150
 CLASS_NAMES = ['glioma', 'meningioma', 'notumor', 'pituitary', 'unlabeled']
 
 # --- Load Pretrained Model ---
 try:
     print(f"[INFO] Loading model from: {MODEL_PATH}")
-    model = load_model(str(MODEL_PATH))
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(f"Model file not found at {MODEL_PATH}. Please train and save the model first.")
+    model = load_model(str(MODEL_PATH), compile=False)
     print("[INFO] Model loaded successfully.")
 except Exception as e:
     print(f"[ERROR] Failed to load model: {e}")
@@ -53,7 +55,8 @@ def predict():
         filename = secure_filename(file.filename)
         print(f"[INFO] Received file: {filename}")
 
-        img = image.load_img(file, target_size=(IMG_SIZE, IMG_SIZE))
+        # Accept both file and stream for image loading
+        img = image.load_img(file.stream, target_size=(IMG_SIZE, IMG_SIZE))
         x = image.img_to_array(img)
         x = np.expand_dims(x / 255.0, axis=0)
 

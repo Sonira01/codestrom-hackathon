@@ -8,21 +8,37 @@ from flask_cors import CORS
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import layers, models
+from pathlib import Path # Ensure Path is imported for use outside main guard
 
-# Configuration
-MODEL_PATH = os.path.join(os.path.dirname(__file__), 'brain_tumor_model.keras')
+# --- Configuration ---
+# Use environment variables for paths, with sensible defaults for local development
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_MODEL_PATH = BASE_DIR / 'brain_tumor_model.keras'
+DEFAULT_TRAIN_DATA_DIR = BASE_DIR.parent / 'data' / 'brain-data' / 'Training'
+
+MODEL_PATH = os.environ.get('MODEL_PATH', str(DEFAULT_MODEL_PATH))
+TRAIN_DATA_DIR = os.environ.get('TRAIN_DATA_DIR', str(DEFAULT_TRAIN_DATA_DIR))
 IMG_SIZE = 150
 CLASS_NAMES = ['glioma', 'meningioma', 'notumor', 'pituitary', 'unlabeled']  # Replace with real class names
 
-# Load or build model
+# --- Model Loading and Initial Training ---
+# IMPORTANT: In a production environment, it's highly recommended to pre-train your model
+# and ensure MODEL_PATH points to it. Running initial_train() on app startup can be
+# slow, resource-intensive, and error-prone if data isn't available as expected.
+# Consider running initial_train() as a separate, one-time setup script or build step.
+
 try:
+    print(f"Loading model from: {MODEL_PATH}")
     model = load_model(MODEL_PATH)
-    # Check output shape
     if model.output_shape[-1] != len(CLASS_NAMES):
+        print(f"Warning: Model output shape {model.output_shape[-1]} "
+              f"does not match number of classes {len(CLASS_NAMES)}. Rebuilding model.")
         raise ValueError('Model output shape does not match number of classes.')
-except Exception:
-    # Build new model for correct number of classes
-    def build_model():
+except Exception as e:
+    print(f"Failed to load model from {MODEL_PATH} or model mismatch: {e}")
+    print("Attempting to build and potentially run initial training...")
+
+    def build_model_for_app(): # Renamed to avoid conflict if model.py has build_model
         m = models.Sequential([
             layers.Input(shape=(IMG_SIZE, IMG_SIZE, 3)),
             layers.Conv2D(32, (3, 3), activation='relu'),
@@ -37,31 +53,72 @@ except Exception:
         ])
         m.compile(optimizer=Adam(learning_rate=1e-4), loss='categorical_crossentropy', metrics=['accuracy'])
         return m
-    model = build_model()
-    # Initial training
+    model = build_model_for_app()
+
+    # Initial training function
     def initial_train():
-        train_dir = os.path.join(os.path.dirname(__file__), '../data/brain-data/Training')
+        print(f"Attempting initial training. Data directory: {TRAIN_DATA_DIR}")
+        if not Path(TRAIN_DATA_DIR).exists() or not any(Path(TRAIN_DATA_DIR).iterdir()):
+            print(f"Training data directory {TRAIN_DATA_DIR} is empty or does not exist. "
+                  "Skipping initial training. Model will be untrained.")
+            # Save the untrained model structure if it's the first time.
+            if not Path(MODEL_PATH).exists():
+                 model.save(MODEL_PATH)
+                 print(f"Saved untrained model structure to {MODEL_PATH}")
+            return
+
+        print(f"Using training data from: {TRAIN_DATA_DIR}")
         datagen = ImageDataGenerator(rescale=1./255, validation_split=0.1)
-        train_gen = datagen.flow_from_directory(
-            train_dir,
+        try:
+            train_gen = datagen.flow_from_directory(
+                TRAIN_DATA_DIR,
             target_size=(IMG_SIZE, IMG_SIZE),
             batch_size=16,
             class_mode='categorical',
             subset='training'
         )
+        except Exception as flow_exc:
+            print(f"Error during flow_from_directory for training data: {flow_exc}")
+            print("Skipping initial training.")
+            if not Path(MODEL_PATH).exists():
+                 model.save(MODEL_PATH) # Save untrained model
+                 print(f"Saved untrained model structure to {MODEL_PATH}")
+            return
+
         val_gen = datagen.flow_from_directory(
-            train_dir,
+            TRAIN_DATA_DIR,
             target_size=(IMG_SIZE, IMG_SIZE),
             batch_size=16,
             class_mode='categorical',
             subset='validation'
         )
+        if train_gen.samples == 0:
+            print("No training samples found by ImageDataGenerator. Skipping model.fit.")
+            if not Path(MODEL_PATH).exists():
+                model.save(MODEL_PATH) # Save untrained model
+                print(f"Saved untrained model structure to {MODEL_PATH}")
+            return
+
+        print(f"Starting model.fit with {train_gen.samples} training samples, {val_gen.samples} validation samples.")
         model.fit(train_gen, validation_data=val_gen, epochs=3)
         model.save(MODEL_PATH)
+        print(f"Initial training complete. Model saved to {MODEL_PATH}")
+
+    # Call initial_train under the exception block where model loading failed.
+    # Ensure this is acceptable for your deployment strategy (see warning above).
     initial_train()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+
+# --- CORS Configuration ---
+# Allow configuring origins via environment variable, defaulting to localhost for development
+ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5173')
+if isinstance(ALLOWED_ORIGINS, str):
+    ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS.split(',')]
+
+CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}}, supports_credentials=True)
+print(f"CORS configured for origins: {ALLOWED_ORIGINS}")
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -71,12 +128,15 @@ def predict():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
     try:
-        # Save uploaded image to training directory
-        label = request.form.get('label', 'unlabeled')  # Optionally get label from form
-        save_dir = os.path.join(os.path.dirname(__file__), '../data/brain-data/Training', label)
-        os.makedirs(save_dir, exist_ok=True)
+        # Save uploaded image to training directory (using configured TRAIN_DATA_DIR)
+        label = request.form.get('label', 'unlabeled')
+        # Ensure TRAIN_DATA_DIR is a Path object for consistency if it comes from env var
+        save_dir_base = Path(TRAIN_DATA_DIR)
+        save_dir = save_dir_base / label
+        save_dir.mkdir(parents=True, exist_ok=True) # Use Path.mkdir
+
         filename = secure_filename(file.filename)
-        save_path = os.path.join(save_dir, filename)
+        save_path = save_dir / filename
         file.seek(0)
         file.save(save_path)
 
@@ -103,59 +163,63 @@ def predict():
 
 # Retrain model function (now called by a separate endpoint)
 def retrain_model():
-    print("Starting model retraining...")
-    train_dir = os.path.join(os.path.dirname(__file__), '../data/brain-data/Training')
+    print(f"Starting model retraining using data from {TRAIN_DATA_DIR}...")
 
-    # Check if the training directory exists and is not empty
-    if not os.path.exists(train_dir) or not os.listdir(train_dir):
-        print("Training directory is empty or does not exist. Skipping retraining.")
+    # Ensure TRAIN_DATA_DIR is a Path object
+    train_data_path = Path(TRAIN_DATA_DIR)
+
+    if not train_data_path.exists() or not any(train_data_path.iterdir()):
+        print(f"Training directory {TRAIN_DATA_DIR} is empty or does not exist. Skipping retraining.")
         return False
 
-    # Check for subdirectories (classes)
-    # flow_from_directory requires at least one subdirectory
-    sub_dirs = [d for d in os.listdir(train_dir) if os.path.isdir(os.path.join(train_dir, d))]
+    sub_dirs = [d for d in train_data_path.iterdir() if d.is_dir()]
     if not sub_dirs:
-        print(f"No subdirectories found in {train_dir}. Skipping retraining as ImageDataGenerator needs class folders.")
+        print(f"No subdirectories found in {TRAIN_DATA_DIR}. Skipping retraining as ImageDataGenerator needs class folders.")
         return False
 
-    # Check if subdirectories contain images
     found_images = False
     for sub_dir in sub_dirs:
-        for ext in ('*.jpg', '*.jpeg', '*.png', '*.bmp'): # Common image extensions
-            if list(Path(os.path.join(train_dir, sub_dir)).glob(ext)):
-                found_images = True
-                break
-        if found_images:
+        # Check for common image extensions
+        if any(sub_dir.glob('*.jpg')) or \
+           any(sub_dir.glob('*.jpeg')) or \
+           any(sub_dir.glob('*.png')) or \
+           any(sub_dir.glob('*.bmp')):
+            found_images = True
             break
 
     if not found_images:
-        print(f"No images found in subdirectories of {train_dir}. Skipping retraining.")
+        print(f"No images found in subdirectories of {TRAIN_DATA_DIR}. Skipping retraining.")
         return False
 
     datagen = ImageDataGenerator(rescale=1./255, validation_split=0.1)
-    train_gen = datagen.flow_from_directory(
-        train_dir,
+    try:
+        train_gen = datagen.flow_from_directory(
+            TRAIN_DATA_DIR, # Use configured path
         target_size=(IMG_SIZE, IMG_SIZE),
         batch_size=16,
         class_mode='categorical',
         subset='training'
     )
+    except Exception as flow_exc:
+        print(f"Error during flow_from_directory for retraining data: {flow_exc}")
+        print("Skipping retraining.")
+        return False
+
     val_gen = datagen.flow_from_directory(
-        train_dir,
+        TRAIN_DATA_DIR, # Use configured path
         target_size=(IMG_SIZE, IMG_SIZE),
         batch_size=16,
         class_mode='categorical',
         subset='validation'
     )
-    # Recompile model (if needed)
     model.compile(optimizer=Adam(learning_rate=1e-4), loss='categorical_crossentropy', metrics=['accuracy'])
 
-    print(f"Found {train_gen.samples} training samples and {val_gen.samples} validation samples.")
+    print(f"Retraining: Found {train_gen.samples} training samples and {val_gen.samples} validation samples.")
     if train_gen.samples == 0:
-        print("No training samples found after applying ImageDataGenerator. Skipping model.fit.")
+        print("Retraining: No training samples found by ImageDataGenerator. Skipping model.fit.")
         return False
 
-    model.fit(train_gen, validation_data=val_gen, epochs=1)  # Use 1 epoch for demo; increase as needed
+    model.fit(train_gen, validation_data=val_gen, epochs=1)
     model.save(MODEL_PATH)
     print(f"Model retrained and saved to {MODEL_PATH}")
     return True
@@ -169,9 +233,12 @@ def trigger_retrain_endpoint():
         else:
             return jsonify({'message': 'Model retraining skipped (e.g., no data or data issue).'}), 200
     except Exception as e:
+        print(f"Error during retraining: {str(e)}") # Log error server-side
         return jsonify({'error': f'Error during retraining: {str(e)}'}), 500
 
-if __name__ == '__main__':
-    # Ensure Path is imported for the checks in retrain_model
-    from pathlib import Path
-    app.run(host='0.0.0.0', port=5000, debug=True)
+# The following block is for local development only and should not be run by a production WSGI server.
+# if __name__ == '__main__':
+#     print("Running Flask development server...")
+#     # Ensure TRAIN_DATA_DIR is created if it doesn't exist for local dev
+#     Path(TRAIN_DATA_DIR).mkdir(parents=True, exist_ok=True)
+#     app.run(host='0.0.0.0', port=5000, debug=True)

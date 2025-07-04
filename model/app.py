@@ -28,12 +28,7 @@ def ensure_dir_and_writable(path):
 
 # --- Configuration ---
 BASE_DIR = Path(__file__).resolve().parent
-<<<<<<< HEAD
 DEFAULT_MODEL_PATH = BASE_DIR / 'modelFile' / 'brain_tumor_model.keras'
-=======
-DEFAULT_MODEL_PATH = Path('/tmp/brain_tumor_model.keras')
-
->>>>>>> 98dbd10362e802089202f1e86d457374da9ac0d2
 DEFAULT_TRAIN_DATA_DIR = BASE_DIR.parent / 'data' / 'brain-data' / 'Training'
 
 MODEL_PATH = os.environ.get('MODEL_PATH', str(DEFAULT_MODEL_PATH))

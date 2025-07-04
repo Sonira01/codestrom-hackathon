@@ -112,7 +112,7 @@ app = Flask(__name__)
 
 # --- CORS Configuration ---
 # Allow configuring origins via environment variable, defaulting to localhost for development
-ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5173')
+ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5173,https://codestrom-hackathon.vercel.app')
 if isinstance(ALLOWED_ORIGINS, str):
     ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS.split(',')]
 

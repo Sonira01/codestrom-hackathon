@@ -97,20 +97,20 @@ const About = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
-                  name: "Mr. Rakshith Ganjimut",
-                  role: "Front-end Developer",
+                  name: "Rakshith Ganjimut",
+                  role: "Full Stack Developer",
                   bio: "2nd year B. Tech at VIT,Chennai.",
                   img: "https://imgs.search.brave.com/k_0L-TWQJQnLSpwz6eY-cMJ5Mtv1vJvH7gY2fHC56vk/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzL2U2L2U0/L2RmL2U2ZTRkZjI2/YmE3NTIxNjFiOWZj/NmExNzMyMWZhMjg2/LmpwZw",
                 },
                 {
-                  name: "Ms. Soumya Gupta",
-                  role: "Backend Developer and ML Engineer",
+                  name: "Soumya Gupta",
+                  role: "ML Engineer",
                   bio: "2nd year B. Tech at VIT,Chennai.",
                   img: "https://imgs.search.brave.com/k_0L-TWQJQnLSpwz6eY-cMJ5Mtv1vJvH7gY2fHC56vk/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzL2U2L2U0/L2RmL2U2ZTRkZjI2/YmE3NTIxNjFiOWZj/NmExNzMyMWZhMjg2/LmpwZw",
                 },
                 {
-                  name: "Mr. Nirvik Goswami",
-                  role: "Full Stack Developer and ML Engineer",
+                  name: "Nirvik Goswami",
+                  role: "ML Engineer",
                   bio: "2nd year B. Tech at VIT,Chennai.",
                   img: "https://imgs.search.brave.com/k_0L-TWQJQnLSpwz6eY-cMJ5Mtv1vJvH7gY2fHC56vk/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzL2U2L2U0/L2RmL2U2ZTRkZjI2/YmE3NTIxNjFiOWZj/NmExNzMyMWZhMjg2/LmpwZw",
                 },

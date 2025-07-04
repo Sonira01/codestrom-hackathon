@@ -31,10 +31,17 @@ BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_MODEL_PATH = BASE_DIR / 'modelFile' / 'brain_tumor_model.keras'
 DEFAULT_TRAIN_DATA_DIR = BASE_DIR.parent / 'data' / 'brain-data' / 'Training'
 
-MODEL_PATH = os.environ.get('MODEL_PATH', str(DEFAULT_MODEL_PATH))
+MODEL_PATH = str(Path('/tmp') / 'brain_tumor_model.keras')
 TRAIN_DATA_DIR = os.environ.get('TRAIN_DATA_DIR', str(DEFAULT_TRAIN_DATA_DIR))
 IMG_SIZE = 150
 CLASS_NAMES = ['glioma', 'meningioma', 'notumor', 'pituitary', 'unlabeled']  # Replace with real class names
+
+env_path = os.environ.get('MODEL_PATH')
+if env_path and not env_path.startswith('/'):
+    MODEL_PATH = str(Path('/tmp') / env_path)
+else:
+    MODEL_PATH = str(Path('/tmp') / 'brain_tumor_model.keras')
+
 
 # --- Model Loading and Initial Training ---
 try:

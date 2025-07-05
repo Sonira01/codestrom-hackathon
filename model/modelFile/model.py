@@ -5,7 +5,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropou
 from tensorflow.keras.optimizers import Adam
 from pathlib import Path
 
-MODEL_FILE_PATH = Path(__file__).resolve().parent / "brain_tumor_model.keras"
+MODEL_FILE_PATH = Path(__file__).resolve().parent / "brain_tumor_model.h5"
 
 def build_model(img_size=150, num_classes=5):  # Changed to 5 to match CLASS_NAMES in app.py
     model = Sequential([
@@ -25,5 +25,5 @@ def build_model(img_size=150, num_classes=5):  # Changed to 5 to match CLASS_NAM
 
 if __name__ == "__main__":
     model = build_model()
-    model.save(MODEL_FILE_PATH)
+    model.save(MODEL_FILE_PATH, save_format='h5')
     print(f"[INFO] Model saved to {MODEL_FILE_PATH}")

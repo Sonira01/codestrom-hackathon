@@ -106,6 +106,23 @@ const Report = () => {
           }}>
             {loading ? 'Analyzing...' : 'Analyze'}
           </button>
+          {loading && (
+            <div style={{
+              marginTop: 16,
+              width: '100%',
+              height: 8,
+              background: '#e0e7ff',
+              borderRadius: 4,
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                width: '30%',
+                height: '100%',
+                background: 'linear-gradient(90deg, #6366f1, #60a5fa)',
+                animation: 'progress 1.5s ease-in-out infinite',
+              }}></div>
+            </div>
+          )}
         </form>
         {error && <div style={{ color: '#dc2626', marginTop: 10 }}>{error}</div>}
         {result && result.all_confidences && (
@@ -144,6 +161,11 @@ const Report = () => {
           0% { opacity: 1; }
           50% { opacity: 0.7; }
           100% { opacity: 1; }
+        }
+        @keyframes progress {
+          0% { transform: translateX(-100%); }
+          50% { transform: translateX(250%); }
+          100% { transform: translateX(-100%); }
         }
       `}</style>
     </div>

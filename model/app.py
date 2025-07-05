@@ -5,7 +5,7 @@ from flask_cors import CORS
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from werkzeug.utils import secure_filename
-from model.modelFile.model import build_model # Import build_model
+from modelFile.model import build_model
 from pathlib import Path
 
 # --- Config ---

@@ -5,6 +5,7 @@ from flask_cors import CORS
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from werkzeug.utils import secure_filename
+from model.modelFile.model import build_model # Import build_model
 from pathlib import Path
 
 # --- Config ---
@@ -18,7 +19,9 @@ try:
     print(f"[INFO] Loading model from: {MODEL_PATH}")
     if not MODEL_PATH.exists():
         raise FileNotFoundError(f"Model file not found at {MODEL_PATH}. Please train and save the model first.")
-    model = load_model(str(MODEL_PATH), compile=False)
+    # model = load_model(str(MODEL_PATH), compile=False) # Old way
+    model = build_model(img_size=IMG_SIZE, num_classes=len(CLASS_NAMES)) # Build model structure
+    model.load_weights(str(MODEL_PATH)) # Load only weights
     print("[INFO] Model loaded successfully.")
 except Exception as e:
     print(f"[ERROR] Failed to load model: {e}")

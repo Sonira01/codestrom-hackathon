@@ -75,11 +75,11 @@ const Login = () => {
           </button>
         </form>
         <button
-           onClick={handleGoogleSignUp}
-            className="w-[70vh] mt-2.5 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition transform hover:scale-105"
-          >
-            SignIn with Google
-          </button>
+          onClick={handleGoogleSignUp}
+          className="max-w-md w-full mt-2.5 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition transform hover:scale-105"
+        >
+          SignIn with Google
+        </button>
       </div>
     </div>
   );

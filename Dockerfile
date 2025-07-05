@@ -1,23 +1,27 @@
-# Use official Python image
+# Use official slim Python base image
 FROM python:3.10-slim
 
+# Environment settings
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Set working directory
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
+# Copy and install dependencies
 COPY requirements.txt .
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt && pip cache purge
 
-RUN pip install --upgrade pip && pip install -r requirements.txt
-
-# Create model directory with write permissions in /app
-RUN mkdir -p /app/model
-
+# Copy all project files
 COPY . .
 
+# Expose the port your app runs on
 EXPOSE 8000
 
-# Adjust 'app:app' if your entrypoint is different
+# Start the Flask app with Gunicorn
 CMD ["gunicorn", "model.app:app", "--chdir", "/app", "--bind", "0.0.0.0:8000"]

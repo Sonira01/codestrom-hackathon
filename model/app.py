@@ -8,6 +8,7 @@ from tensorflow.keras.preprocessing import image
 from werkzeug.utils import secure_filename
 from model.modelFile.model import build_model
 from pathlib import Path
+from io import BytesIO
 
 # --- Config ---
 BASE_DIR = Path(__file__).resolve().parent
@@ -58,7 +59,7 @@ def predict():
         print(f"[INFO] Received file: {filename}")
 
         # Accept both file and stream for image loading
-        img = image.load_img(file.stream, target_size=(IMG_SIZE, IMG_SIZE))
+        img = image.load_img(BytesIO(file.read()), target_size=(IMG_SIZE, IMG_SIZE))
         x = image.img_to_array(img)
         x = np.expand_dims(x / 255.0, axis=0)
 

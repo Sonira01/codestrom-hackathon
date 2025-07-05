@@ -80,7 +80,7 @@ const Navbar = () => {
                   clipRule="evenodd"
                 />
               </svg>
-              HealthPredict
+              CortexIO
             </Link>
           </motion.div>
 

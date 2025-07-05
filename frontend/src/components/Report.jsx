@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const CLASS_NAMES = ['glioma', 'meningioma', 'pituitary', 'no_tumor']; // Example real class names
+const CLASS_NAMES = ['glioma', 'meningioma', 'pituitary', 'no_tumor'];
 
 const Report = () => {
   const [file, setFile] = useState(null);
@@ -26,8 +26,6 @@ const Report = () => {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      console.log("Entered predict route");
-      //const response = await fetch('http://localhost:5000/predict', {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/predict`, {
         method: 'POST',
         body: formData,
@@ -49,7 +47,6 @@ const Report = () => {
     }
   };
 
-  // Helper to get max risk
   const getMaxRisk = (confidences) => {
     let max = { name: '', value: 0 };
     for (const [name, value] of Object.entries(confidences)) {
@@ -59,115 +56,87 @@ const Report = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      width: '100vw',
-      background: 'linear-gradient(135deg, #6366f1 0%, #60a5fa 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-    }}>
-      <div style={{
-        background: 'rgba(255,255,255,0.95)',
-        borderRadius: 24,
-        boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-        padding: 40,
-        maxWidth: 420,
-        width: '100%',
-        textAlign: 'center',
-      }}>
-        <h1 style={{
-          fontSize: '2.5rem',
-          fontWeight: 700,
-          marginBottom: 24,
-          background: 'linear-gradient(90deg, #6366f1, #60a5fa)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          animation: 'pulse 2s infinite',
-        }}>
-          Brain Tumor Risk Analysis
-        </h1>
-        <form onSubmit={handleSubmit} style={{ marginBottom: 20 }}>
-          <input type="file" accept="image/*" onChange={handleFileChange} style={{ marginBottom: 16 }} />
-          <br />
-          <button type="submit" disabled={loading} style={{
-            marginTop: 8,
-            padding: '12px 32px',
-            borderRadius: 12,
-            background: 'linear-gradient(90deg, #6366f1, #60a5fa)',
-            color: '#fff',
-            fontWeight: 600,
-            fontSize: '1.1rem',
-            border: 'none',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            boxShadow: '0 2px 8px rgba(99,102,241,0.15)',
-            transition: 'background 0.3s',
-          }}>
-            {loading ? 'Analyzing...' : 'Analyze'}
-          </button>
-          {loading && (
-            <div style={{
-              marginTop: 16,
-              width: '100%',
-              height: 8,
-              background: '#e0e7ff',
-              borderRadius: 4,
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                width: '30%',
-                height: '100%',
-                background: 'linear-gradient(90deg, #6366f1, #60a5fa)',
-                animation: 'progress 1.5s ease-in-out infinite',
-              }}></div>
-            </div>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background Video */}
+      <video
+        className="fixed top-0 left-0 w-full h-full object-cover z-[-1]"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        poster="https://i.pinimg.com/videos/thumbnails/originals/2e/fc/a0/2efca0faa924c69e71e576da04168958.0000000.jpg"
+        src="https://cdn.pixabay.com/video/2023/04/02/157741-818722985_large.mp4"
+      ></video>
+
+      {/* Overlay */}
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-[#0d1b2a]/80 to-[#1b263b]/90 z-0"></div>
+
+      {/* Content */}
+      <div className="relative z-10 flex items-center justify-center min-h-screen">
+        <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl px-10 py-12 max-w-md w-full text-center">
+          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-[#3B536A] via-[#1E3248] to-[#0C1D2E] bg-clip-text text-transparent">
+  Brain Tumor Risk Analysis
+</h1>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200"
+            />
+
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-3 text-lg font-semibold rounded-xl text-white shadow-md transition duration-300 
+                ${loading
+                  ? 'bg-indigo-300 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600'
+                }`}
+            >
+              {loading ? 'Analyzing...' : 'Analyze'}
+            </button>
+
+            {/* Progress Bar */}
+            {loading && (
+              <div className="w-full h-2 bg-indigo-100 rounded overflow-hidden">
+                <div className="w-1/3 h-full bg-gradient-to-r from-indigo-500 to-blue-400 animate-pulse"></div>
+              </div>
+            )}
+          </form>
+
+          {/* Error Message */}
+          {error && (
+            <div className="text-red-600 font-medium mt-4">{error}</div>
           )}
-        </form>
-        {error && <div style={{ color: '#dc2626', marginTop: 10 }}>{error}</div>}
-        {result && result.all_confidences && (
-          <div style={{ marginTop: 20, textAlign: 'left' }}>
-            <b>Risk per Category:</b>
-            {Object.entries(result.all_confidences).map(([name, value]) => (
-              <div key={name} style={{ margin: '10px 0' }}>
-                <span style={{ display: 'inline-block', width: 120 }}>{name}</span>
-                <div style={{ display: 'inline-block', width: 180, verticalAlign: 'middle' }}>
-                  <div style={{
-                    height: 16,
-                    background: '#e0e7ff',
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      width: `${(value * 100).toFixed(1)}%`,
-                      height: '100%',
-                      background: 'linear-gradient(90deg, #6366f1, #60a5fa)',
-                      borderRadius: 8,
-                      transition: 'width 0.5s',
-                    }}></div>
+
+          {/* Prediction Result */}
+          {result?.all_confidences && (
+            <div className="mt-6 text-left">
+              <h2 className="font-semibold mb-2 text-gray-800">Risk per Category:</h2>
+              {Object.entries(result.all_confidences).map(([name, value]) => (
+                <div key={name} className="mb-3">
+                  <div className="flex justify-between text-sm text-gray-700">
+                    <span>{name}</span>
+                    <span className="font-semibold">{(value * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="w-full h-3 bg-indigo-100 rounded">
+                    <div
+                      className="h-full bg-gradient-to-r from-indigo-500 to-blue-400 rounded transition-all duration-500"
+                      style={{ width: `${(value * 100).toFixed(1)}%` }}
+                    ></div>
                   </div>
                 </div>
-                <span style={{ marginLeft: 10, fontWeight: 600 }}>{(value * 100).toFixed(1)}%</span>
+              ))}
+              <div className="mt-5 text-blue-600 font-bold text-lg">
+                Highest Risk: {getMaxRisk(result.all_confidences).name} ({(getMaxRisk(result.all_confidences).value * 100).toFixed(1)}%)
               </div>
-            ))}
-            <div style={{ marginTop: 24, fontSize: '1.2rem', fontWeight: 700, color: '#2563eb' }}>
-              Highest Risk: {getMaxRisk(result.all_confidences).name} ({(getMaxRisk(result.all_confidences).value * 100).toFixed(1)}%)
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-      <style>{`
-        @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.7; }
-          100% { opacity: 1; }
-        }
-        @keyframes progress {
-          0% { transform: translateX(-100%); }
-          50% { transform: translateX(250%); }
-          100% { transform: translateX(-100%); }
-        }
-      `}</style>
     </div>
   );
 };

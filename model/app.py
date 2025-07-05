@@ -1,4 +1,5 @@
 import os
+import json
 import numpy as np
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -10,7 +11,7 @@ from pathlib import Path
 
 # --- Config ---
 BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / 'modelFile' / 'brain_tumor_model.h5'
+MODEL_PATH = Path(os.getenv("MODEL_PATH", BASE_DIR / 'modelFile' / 'brain_tumor_model.h5'))
 IMG_SIZE = 150
 CLASS_NAMES = ['glioma', 'meningioma', 'notumor', 'pituitary', 'unlabeled']
 
@@ -29,10 +30,8 @@ except Exception as e:
 
 # --- Flask App ---
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": [
-    "https://codestrom-hackathon.vercel.app",
-    "http://localhost:5173"
-]}})
+origins = os.getenv("ALLOWED_ORIGINS", '["https://codestrom-hackathon.vercel.app", "http://localhost:5173"]')
+CORS(app, resources={r"/*": {"origins": json.loads(origins)}})
 print("[INFO] CORS configured.")
 
 @app.route('/')
